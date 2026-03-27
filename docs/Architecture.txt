@@ -1,0 +1,248 @@
+# System Architecture
+# Leave Management System
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        FRONTEND LAYER (React)                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   Login      │  │   Dashboard  │  │  Apply Leave │  │  My Requests │  │
+│  │   Page       │  │   Page       │  │   Page       │  │   Page       │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │  Manager     │  │  Admin       │  │  Notification│  │   Reports    │  │
+│  │  Panel       │  │  Panel       │  │   Page       │  │   Page       │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │                               │                               │
+         │                               │                               │
+         └───────────────────────────────┼───────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    API GATEWAY / REST ENDPOINTS                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  /api/auth           /api/employees      /api/leaves     /api/notifications│
+│  ├──register        ├──get all           ├──apply         ├──get all       │
+│  ├──login           ├──get by id         ├──approve       ├──get unread     │
+│  ├──refresh         ├──update            ├──reject        ├──mark read      │
+│  └──logout          ├──delete            ├──cancel        └──get count      │
+│                     ├──get active        └──get by emp                      │
+│                     └──email search         & manager                       │
+│                                                                             │
+│  /api/admin         /api/managers       ...other routes                    │
+│  ├──employees       ├──subordinates                                        │
+│  ├──by role         └──pending leaves                                      │
+│  └──create emp                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         │ REST API Calls (JSON)
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   AUTHENTICATION & SECURITY LAYER                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                          JWT Token Provider                          │  │
+│  │  - Token generation                                                  │  │
+│  │  - Token validation                                                  │  │
+│  │  - Email extraction from token                                       │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                          JWT Filter                                  │  │
+│  │  - Intercepts all requests                                           │  │
+│  │  - Validates Authorization header                                    │  │
+│  │  - Extracts email from token                                         │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                       Security Config                                │  │
+│  │  - CSRF disabled for REST APIs                                       │  │
+│  │  - Session management (STATELESS)                                    │  │
+│  │  - Role-based access control (RBAC)                                  │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CONTROLLER LAYER (Request Handlers)                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  AuthController    EmployeeController   LeaveController   AdminController   │
+│  Notification      ...other controllers                                     │
+│  Controller                                                                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      SERVICE LAYER (Business Logic)                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────────┐ │
+│  │  EmployeeService     │  │   LeaveService       │  │ NotificationSvc  │ │
+│  │ - CRUD operations    │  │ - Apply leave        │  │ - Create notif   │ │
+│  │ - Role management    │  │ - Approve/Reject     │  │ - Get unread     │ │
+│  │ - Manager hierarchy  │  │ - Cancel leave       │  │ - Mark as read   │ │
+│  │ - Active filtering   │  │ - Validation         │  │ - Send emails    │ │
+│  └──────────────────────┘  └──────────────────────┘  └──────────────────┘ │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                    VALIDATOR LAYER                                   │  │
+│  │  - Leave date validation                                             │  │
+│  │  - Balance checking                                                  │  │
+│  │  - Conflict detection                                                │  │
+│  │  - Working days calculation                                          │  │
+│  │  - Calendar days calculation                                         │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                      MAPPER LAYER                                    │  │
+│  │  - Entity ↔ DTO conversion                                           │  │
+│  │  - Data transformation                                               │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    REPOSITORY LAYER (Data Access)                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  EmployeeRepository      LeaveRepository        LeaveBalanceRepository      │
+│  NotificationRepository  AuditLogRepository     HolidayRepository           │
+│                                                                             │
+│  (Spring Data JPA - Automatic CRUD operations & custom query methods)      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         │ SQL Queries via Hibernate ORM
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│               DATABASE LAYER (MySQL/MariaDB)                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │ EMPLOYEES    │  │ LEAVE_REQUESTS│  │LEAVE_BALANCES│  │NOTIFICATIONS │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │ AUDIT_LOGS   │  │ HOLIDAYS     │  │DEPARTMENTS   │  │(Indexes)     │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
+│                                                                             │
+│  - Total 8 tables with relationships                                        │
+│  - Support for multi-level approval workflow                               │
+│  - Leave balance tracking by type and year                                 │
+│  - Audit trail for compliance                                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+REQUEST FLOW DIAGRAM:
+─────────────────────
+
+Frontend (React)
+      │
+      │ HTTP Request (JSON)
+      ▼
+Router
+      │
+      ▼
+Security Filter (JWT Validation)
+      │
+      ├─ Valid Token ──┐
+      │                ▼
+      │           Controller
+      │                │
+      │                ▼
+      │           Service Layer
+      │                │
+      │                ├─ Validation
+      │                ├─ Business Logic
+      │                └─ Mapper
+      │                │
+      │                ▼
+      │           Repository Layer
+      │                │
+      │                ▼
+      │           Database (SQL)
+      │                │
+      │                ▼
+      │           Response (JSON)
+      │
+      └─ Invalid Token ──→ 401 Unauthorized
+
+
+KEY FEATURES IMPLEMENTED:
+─────────────────────────
+
+1. **Authentication & Authorization**
+   - JWT-based authentication
+   - Role-based access control (RBAC)
+   - Token refresh mechanism
+
+2. **Leave Management**
+   - Multiple leave types (Casual, Sick, Earned, etc.)
+   - Leave balance tracking
+   - Working days vs calendar days calculation
+   - Multi-level approval workflow
+
+3. **Notifications**
+   - Real-time notification creation
+   - Unread notification tracking
+   - Multiple notification types
+
+4. **Audit Logging**
+   - Track all user actions
+   - User IP logging
+   - Change history for compliance
+
+5. **Data Validation**
+   - End date must be after start date
+   - No leaves in the past
+   - No overlapping leaves
+   - Sufficient balance checking
+
+6. **Error Handling**
+   - Global exception handler
+   - Custom exception types
+   - Meaningful error messages
+
+7. **API Documentation**
+   - OpenAPI 3.0 support
+   - Swagger UI integration
+   - Complete endpoint documentation
+
+
+TECHNOLOGY STACK:
+─────────────────
+
+Backend:
+- Spring Boot 4.0.5
+- Spring Data JPA / Hibernate
+- Spring Security with JWT
+- MySQL 8.0 Database
+- Lombok for boilerplate reduction
+- Jackson for JSON processing
+- OpenAPI 3.0 / Springdoc
+
+Frontend:
+- React.js
+- Tailwind CSS
+- Axios for HTTP calls
+- Context API for state management
+- React Router for navigation
+
+Development Tools:
+- Maven for build management
+- Git for version control
+- IntelliJ IDEA / VS Code for IDE

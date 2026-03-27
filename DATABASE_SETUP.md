@@ -1,18 +1,46 @@
-# Smart Leave Management System - Enterprise Level
+# Leave Management System - Complete Setup Guide
 
-A scalable, secure, and intelligent Leave Management System built with Java Spring Boot and MySQL. This system automates the complete leave lifecycle with role-based access control, real-time notifications, and advanced analytics.
+## Quick Start
 
-## 📋 Table of Contents
+### 1. Database Setup
+```bash
+# Create database
+mysql -u root -p
+> CREATE DATABASE leave_management_system;
+> exit;
 
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [System Architecture](#-system-architecture)
-- [Database Schema](#-database-schema)
-- [Installation & Setup](#-installation--setup)
-- [API Endpoints](#-api-endpoints)
-- [Core Entities](#-core-entities)
-- [Business Logic](#-business-logic)
-- [Advanced Features](#-advanced-features)
+# Run schema
+mysql -u root -p leave_management_system < database/schema.sql
+
+# Load sample data
+mysql -u root -p leave_management_system < database/data.sql
+```
+
+**Database Configuration** (Update if needed in `application.properties`):
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/leave_management_system?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+spring.datasource.username=root
+spring.datasource.password=root
+```
+
+### 2. Backend Setup
+```bash
+cd c:\Users\thiru\Downloads\LeaveManagementSystem
+mvn clean install
+mvn spring-boot:run
+```
+Backend runs on: http://localhost:8080
+API Documentation: http://localhost:8080/swagger-ui.html
+
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+npm start
+```
+Frontend runs on: http://localhost:3000
+
+## Directory Structure
 
 ## ⭐ Features
 

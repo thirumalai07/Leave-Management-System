@@ -1,0 +1,152 @@
+# Entity Relationship Diagram (ER Diagram)
+# Leave Management System Database
+
+```
+┌─────────────────────────┐
+│      EMPLOYEES          │
+├─────────────────────────┤
+│ PK id                   │
+│ first_name              │
+│ last_name               │
+│ email (UNIQUE)          │
+│ password                │
+│ phone_number            │
+│ role (ENUM)             │
+│ department              │
+│ designation             │
+│ join_date               │
+│ FK manager_id (SELF)    │
+│ active (DEFAULT: TRUE)  │
+│ created_at              │
+│ updated_at              │
+└─────────────────────────┘
+         │    │
+         │    └─────────────────┐
+         │                      │ 1:N (Manager-Subordinate)
+         │                      │
+         │          ┌──────────────────────────┐
+         │          │  LEAVE_REQUESTS          │
+         │          ├──────────────────────────┤
+         │          │ PK id                    │
+         │          │ FK employee_id           │
+         │          │ leave_type (ENUM)        │
+         │          │ start_date               │
+         │          │ end_date                 │
+         │          │ reason                   │
+         │          │ status (ENUM)            │
+         │          │ FK approved_by           │
+         │          │ number_of_days           │
+         │          │ is_working_days          │
+         │          │ rejection_reason         │
+         │          │ created_at               │
+         │          │ updated_at               │
+         │          │ approved_at              │
+         │          └──────────────────────────┘
+         │
+         │
+         ├─────────────────────────────────────┐
+         │ 1:N (Employee-LeaveBalance)         │
+         │                                     │
+         │         ┌──────────────────────┐    │
+         │         │  LEAVE_BALANCES      │    │
+         │         ├──────────────────────┤    │
+         │         │ PK id                │    │
+         │         │ FK employee_id       │    │
+         │         │ leave_type (ENUM)    │    │
+         │         │ total_days           │    │
+         │         │ used_days            │    │
+         │         │ remaining_days       │    │
+         │         │ year                 │    │
+         │         │ created_at           │    │
+         │         │ updated_at           │    │
+         │         └──────────────────────┘    │
+         │                                     │
+         │
+         ├─────────────────────────────────────┐
+         │ 1:N (Employee-Notification)         │
+         │                                     │
+         │      ┌──────────────────────────┐   │
+         │      │   NOTIFICATIONS          │   │
+         │      ├──────────────────────────┤   │
+         │      │ PK id                    │   │
+         │      │ FK employee_id           │   │
+         │      │ title                    │   │
+         │      │ message                  │   │
+         │      │ type (ENUM)              │   │
+         │      │ is_read (DEFAULT: FALSE) │   │
+         │      │ related_entity_id        │   │
+         │      │ created_at               │   │
+         │      │ read_at                  │   │
+         │      └──────────────────────────┘   │
+         │                                     │
+         │
+         └─────────────────────────────────────┐
+           1:N (Employee-AuditLog)             │
+                                               │
+             ┌──────────────────────────┐      │
+             │    AUDIT_LOGS            │      │
+             ├──────────────────────────┤      │
+             │ PK id                    │      │
+             │ FK employee_id           │      │
+             │ action                   │      │
+             │ entity_type              │      │
+             │ entity_id                │      │
+             │ old_values               │      │
+             │ new_values               │      │
+             │ ip_address               │      │
+             │ created_at               │      │
+             └──────────────────────────┘      │
+
+
+┌──────────────────────────┐
+│      HOLIDAYS            │
+├──────────────────────────┤
+│ PK id                    │
+│ name                     │
+│ date (UNIQUE)            │
+│ description              │
+│ year                     │
+│ created_at               │
+│ updated_at               │
+└──────────────────────────┘
+
+
+┌──────────────────────────┐
+│    DEPARTMENTS           │
+├──────────────────────────┤
+│ PK id                    │
+│ name (UNIQUE)            │
+│ description              │
+│ created_at               │
+│ updated_at               │
+└──────────────────────────┘
+```
+
+## Relationships Summary:
+
+1. **EMPLOYEES --(1:N)--> EMPLOYEES(Self referencing)**
+   - employee → manager
+
+2. **EMPLOYEES --(1:N)--> LEAVE_REQUESTS**
+   - One employee can have many leave requests
+
+3. **EMPLOYEES --(1:N)--> LEAVE_BALANCES**
+   - One employee can have leave balances for different leave types and years
+
+4. **EMPLOYEES --(1:N)--> NOTIFICATIONS**
+   - One employee can have many notifications
+
+5. **EMPLOYEES --(1:N)--> AUDIT_LOGS**
+   - One employee can have many audit log entries
+
+6. **LEAVE_REQUESTS --(M:1)--> EMPLOYEES**
+   - Many leave requests can be approved by one employee (approver)
+
+## Key Constraints:
+
+- `email` in EMPLOYEES table is UNIQUE
+- `date` in HOLIDAYS table is UNIQUE
+- `name` in DEPARTMENTS table is UNIQUE
+- Composite UNIQUE constraint on (employee_id, leave_type, year) in LEAVE_BALANCES
+- Foreign key relationships with CASCADE DELETE for data integrity
+- Self-referencing foreign key for manager hierarchy
